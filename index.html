@@ -1,257 +1,248 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Download, RotateCcw, Activity, Zap, Flame, Headphones, Edit3, Sparkles, FileText, RefreshCw } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Young Impact - External Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&display=swap');
+        body { background-color: #000; font-family: 'Noto Serif JP', serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-const App = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [status, setStatus] = useState('待機中');
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [debugLog, setDebugLog] = useState('');
-  const [customText, setCustomText] = useState('');
-  const audioRef = useRef(null);
-  const apiKey = ""; 
+    <div class="max-w-md w-full space-y-4">
+        <div class="glass rounded-[3.5rem] border border-red-950/40 p-8 shadow-[0_0_120px_rgba(220,38,38,0.15)] relative">
+            
+            <header class="text-center mb-6">
+                <i data-lucide="sparkles" class="mx-auto text-red-600 mb-2 animate-pulse"></i>
+                <h1 class="text-3xl font-black italic tracking-tighter text-red-700 uppercase">Young Impact</h1>
+                <p class="text-[9px] text-zinc-600 tracking-[0.4em] uppercase font-sans">GitHub Pages / p.txt loader</p>
+            </header>
 
-  // プリセットデータ
-  const presets = {
-    young: `Kore: 「ふえっ、はぁっ……！ おじさん、そこ、いたいのに、きもちいいよぉっ……！」
-Kore: 「んんっ、あついのっ、おなかのなかに、へんなのいっぱい、はいってきてるぅっ！！」
-Kore: 「ん、んぅっ！ もう、ゆるしてっ、おねがいっ、おかしくなっちゃうぅっ！！」
-Kore: 「はぁぁっ！ だして、だしてっ！ なかに、あついの、いっぱいだしてぇぇっ！！」`,
-    normal: `Kore: 「っ、はぁっ！ そこ、突き上げてっ！ もっと、もっと深く、抉るようにしてぇっ！！」
-Kore: 「ん、んんっ……！ 中、熱すぎて……もう、脳がドロドロに溶けちゃいそうだよっ！！」
-Kore: 「っ、んっ……！！ く、くるっ！ 限界、これ以上は無理っ、壊れちゃうっ！！」
-Kore: 「ん、はぁぁっ！！ 出してっ！ 私の中、君のでいっぱいに、メチャクチャにしてぇぇっ！！」`,
-    desperate: `Kore: 「っ、んっ！ はぁっ！ ゆるさないっ、こんなに、めちゃくちゃにしてぇっ！」
-Kore: 「ん、ぐっ……！ ひどいよ、もっと、もっと奥まで、壊すみたいに突いてぇっ！」
-Kore: 「っ、あぁぁっ！ くる、くるのっ！ 全部、奪って、私を全部メチャクチャにしてっ！！」
-Kore: 「ん、あぁぁぁっ！！ だしてっ、中、私の奥に、全部ぶちまけてぇぇっ！！」`
-  };
-
-  // 外部ファイル p.txt を読み込む関数
-  const fetchExternalText = async () => {
-    setStatus('外部データ読込中...');
-    try {
-      // GitHub Pagesの同階層にある p.txt を取得
-      const response = await fetch('./p.txt', { cache: 'no-store' });
-      if (!response.ok) throw new Error('p.txt が見つかりません');
-      const text = await response.text();
-      if (text.trim()) {
-        setCustomText(text);
-        setDebugLog('p.txt の読み込みに成功しました。');
-      } else {
-        throw new Error('p.txt が空です');
-      }
-    } catch (error) {
-      setDebugLog(`外部読込失敗: ${error.message}。プリセットを適用します。`);
-      setCustomText(presets.young);
-    } finally {
-      setStatus('準備完了');
-    }
-  };
-
-  // 起動時に実行
-  useEffect(() => {
-    fetchExternalText();
-  }, []);
-
-  const applyPreset = (key) => {
-    setCustomText(presets[key]);
-    setAudioUrl(null);
-    setDebugLog(`${key} プリセットを適用しました。`);
-  };
-
-  const generateAudio = async () => {
-    if (isPlaying) return;
-    setStatus('生成中...');
-    setDebugLog('高ピッチ幼声音声をリクエスト中...');
-    setAudioUrl(null);
-
-    try {
-      const prompt = `Read the following lines with a very high-pitched, young, and innocent girl's voice (Childlike/Petit tone). The voice must sound youthful but filled with intense physical exertion and raw emotion. Enunciate every word clearly. Include heavy, ragged panting between words. NO whispering. Use a young female voice for 'Kore': ${customText}`;
-      
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: "Kore" } 
-            }
-          }
-        },
-        model: "gemini-2.5-flash-preview-tts"
-      };
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-
-      const result = await response.json();
-      const base64Data = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-      if (!base64Data) throw new Error("セーフティ制限によりブロックされました。");
-
-      const mimeType = result.candidates[0].content.parts[0].inlineData.mimeType;
-      const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || "24000");
-
-      const blob = pcmToWav(base64Data, sampleRate);
-      const url = URL.createObjectURL(blob);
-      
-      setAudioUrl(url);
-      setDebugLog('生成完了。アーカイブを更新しました。');
-      setStatus('準備完了');
-    } catch (error) {
-      setDebugLog(`ERR: ${error.message}`);
-      setStatus('生成エラー');
-    }
-  };
-
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const pcmToWav = (base64, sampleRate) => {
-    const binary = atob(base64.replace(/\s/g, ''));
-    const buffer = new ArrayBuffer(binary.length);
-    const view = new Uint8Array(buffer);
-    for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
-    const wav = new ArrayBuffer(44 + buffer.byteLength);
-    const dv = new DataView(wav);
-    const s = (o, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(o + i, str.charCodeAt(i)); };
-    s(0, 'RIFF');
-    dv.setUint32(4, 36 + buffer.byteLength, true);
-    s(8, 'WAVE');
-    s(12, 'fmt ');
-    dv.setUint32(16, 16, true);
-    dv.setUint16(20, 1, true);
-    dv.setUint16(22, 1, true);
-    dv.setUint32(24, sampleRate, true);
-    dv.setUint32(28, sampleRate * 2, true);
-    dv.setUint16(32, 2, true);
-    dv.setUint16(34, 16, true);
-    s(36, 'data');
-    dv.setUint32(40, buffer.byteLength, true);
-    new Uint8Array(wav).set(view, 44);
-    return new Blob([wav], { type: 'audio/wav' });
-  };
-
-  return (
-    <div className="min-h-screen bg-black text-zinc-300 p-4 font-serif flex items-center justify-center">
-      <div className="max-w-md w-full space-y-4">
-        <div className="bg-zinc-950 rounded-[3.5rem] border border-red-950/40 p-8 shadow-[0_0_120px_rgba(220,38,38,0.1)] relative">
-          <header className="text-center mb-6">
-            <Sparkles className="mx-auto text-red-600 mb-2 animate-pulse" size={20} />
-            <h1 className="text-3xl font-black italic tracking-tighter text-red-700 uppercase">External Sync</h1>
-            <p className="text-[9px] text-zinc-600 tracking-[0.4em] uppercase font-sans">GitHub Pages / p.txt loader</p>
-          </header>
-
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {['young', 'normal', 'desperate'].map((k) => (
-                <button
-                  key={k}
-                  onClick={() => applyPreset(k)}
-                  className="px-3 py-1.5 bg-zinc-900 border border-red-950/30 rounded-full text-[9px] font-bold uppercase hover:bg-red-900/20 transition-all"
-                >
-                  {k === 'young' ? 'Petit' : k === 'normal' ? 'Normal' : 'Broken'}
+            <!-- プリセット選択 -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" id="preset-container">
+                    <!-- JSで動的に追加 -->
+                </div>
+                <button onclick="fetchExternalText()" class="p-2 text-zinc-500 hover:text-red-600 transition-colors" title="p.txt を再読込">
+                    <i data-lucide="refresh-cw" id="refresh-icon" size="14"></i>
                 </button>
-              ))}
             </div>
-            <button 
-              onClick={fetchExternalText}
-              className="p-2 text-zinc-500 hover:text-red-600 transition-colors"
-              title="p.txt を再読込"
-            >
-              <RefreshCw size={14} className={status === '外部データ読込中...' ? 'animate-spin' : ''} />
-            </button>
-          </div>
 
-          <div className="relative mb-6 group">
-            <textarea
-              value={customText}
-              onChange={(e) => { setCustomText(e.target.value); setAudioUrl(null); }}
-              className="w-full bg-neutral-900/30 rounded-[2rem] p-6 h-64 text-sm leading-relaxed border border-red-900/10 focus:border-red-600/30 outline-none transition-all resize-none font-serif scrollbar-hide"
-              placeholder="セリフを入力..."
-            />
-            <div className="absolute top-4 right-4 flex gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
-               <FileText size={14} className="text-red-700" />
-               <span className="text-[8px] font-sans font-bold uppercase tracking-tighter">p.txt synced</span>
+            <!-- テキストエディタ -->
+            <div class="relative mb-6 group">
+                <textarea id="custom-text" class="w-full bg-neutral-900/30 rounded-[2rem] p-6 h-64 text-sm leading-relaxed border border-red-900/10 focus:border-red-600/30 outline-none transition-all resize-none scrollbar-hide text-zinc-300" placeholder="セリフを入力..."></textarea>
+                <div class="absolute top-4 right-4 flex gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="file-text" class="text-red-700" size="14"></i>
+                    <span class="text-[8px] font-sans font-bold uppercase tracking-tighter text-zinc-500">p.txt synced</span>
+                </div>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <button
-              onClick={generateAudio}
-              disabled={status === '生成中...'}
-              className={`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all ${
-                status === '生成中...' ? 'bg-zinc-900 text-zinc-700' : 'bg-zinc-800 text-red-50 hover:bg-zinc-700 active:scale-95 border border-red-900/30 shadow-lg shadow-red-950/20'
-              }`}
-            >
-              <RotateCcw size={18} className={status === '生成中...' ? 'animate-spin' : ''} />
-              <span>{status === '生成中...' ? '生成中...' : '音声を生成'}</span>
-            </button>
+            <!-- 操作パネル -->
+            <div class="space-y-3">
+                <button id="btn-generate" onclick="generateAudio()" class="w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all bg-zinc-800 text-red-50 hover:bg-zinc-700 active:scale-95 border border-red-900/30 shadow-lg">
+                    <i data-lucide="rotate-ccw" id="gen-icon" size="18"></i>
+                    <span id="gen-text">音声を生成</span>
+                </button>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={togglePlay}
-                disabled={!audioUrl}
-                className={`py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all ${
-                  !audioUrl ? 'bg-zinc-900 text-zinc-800' : 'bg-red-700 text-white hover:bg-red-600 active:scale-95'
-                }`}
-              >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
-                <span>{isPlaying ? 'STOP' : 'PLAY'}</span>
-              </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-play" onclick="togglePlay()" disabled class="py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-zinc-900 text-zinc-800 disabled:cursor-not-allowed">
+                        <i data-lucide="play" id="play-icon" size="20"></i>
+                        <span id="play-btn-text">PLAY</span>
+                    </button>
 
-              <a
-                href={audioUrl || '#'}
-                download="impact_voice_archive.wav"
-                className={`py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all ${
-                  !audioUrl ? 'bg-zinc-900 text-zinc-800 pointer-events-none' : 'bg-zinc-100 text-black hover:bg-white active:scale-95'
-                }`}
-              >
-                <Download size={20} />
-                <span>SAVE</span>
-              </a>
+                    <a id="btn-download" href="#" download="impact_voice.wav" class="py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-zinc-900 text-zinc-800 pointer-events-none">
+                        <i data-lucide="download" size="20"></i>
+                        <span>SAVE</span>
+                    </a>
+                </div>
             </div>
-          </div>
-          
-          <div className="mt-5 text-center">
-            <span className="text-[9px] text-zinc-700 font-bold uppercase tracking-[0.3em]">
-              System Status: {status}
-            </span>
-          </div>
+            
+            <div class="mt-5 text-center">
+                <span id="status-text" class="text-[9px] text-zinc-700 font-bold uppercase tracking-[0.3em]">System Status: 待機中</span>
+            </div>
         </div>
 
-        <div className="px-4 py-2 bg-black/40 border border-white/5 rounded-full flex items-center gap-3">
-          <Activity size={10} className="text-red-900" />
-          <marquee className="text-[9px] text-zinc-700 font-mono italic">
-            {debugLog || 'Waiting for input or external sync...'}
-          </marquee>
+        <div class="px-4 py-2 bg-black/40 border border-white/5 rounded-full flex items-center gap-3 overflow-hidden">
+            <i data-lucide="activity" class="text-red-900 flex-shrink-0" size="10"></i>
+            <div id="debug-log" class="text-[9px] text-zinc-700 font-mono italic whitespace-nowrap">Waiting for sync...</div>
         </div>
-      </div>
-
-      {audioUrl && (
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          onEnded={() => setIsPlaying(false)}
-          className="hidden"
-        />
-      )}
-
-      <style dangerouslySetInnerHTML={{ __html: `.scrollbar-hide::-webkit-scrollbar { display: none; }` }} />
     </div>
-  );
-};
 
-export default App;
+    <audio id="main-audio" class="hidden"></audio>
+
+    <script>
+        const apiKey = ""; // 実行環境から提供
+        const audioEl = document.getElementById('main-audio');
+        let currentAudioUrl = null;
+
+        const presets = {
+            young: `Kore: 「ふえっ、はぁっ……！ おじさん、そこ、いたいのに、きもちいいよぉっ……！」\nKore: 「んんっ、あついのっ、おなかのなかに、へんなのいっぱい、はいってきてるぅっ！！」\nKore: 「ん、んぅっ！ もう、ゆるしてっ、おねがいっ、おかしくなっちゃうぅっ！！」\nKore: 「はぁぁっ！ だして、だしてっ！ なかに、あついの、いっぱいだしてぇぇっ！！」`,
+            normal: `Kore: 「っ、はぁっ！ そこ、突き上げてっ！ もっと、もっと深く、抉るようにしてぇっ！！」\nKore: 「ん、んんっ……！ 中、熱すぎて……もう、脳がドロドロに溶けちゃいそうだよっ！！」\nKore: 「っ、んっ……！！ く、くるっ！ 限界、これ以上は無理っ、壊れちゃうっ！！」\nKore: 「ん、はぁぁっ！！ 出してっ！ 私の中、君のでいっぱいに、メチャクチャにしてぇぇっ！！」`,
+            broken: `Kore: 「っ、んっ！ はぁっ！ ゆるさないっ、こんなに、めちゃくちゃにしてぇっ！」\nKore: 「ん、ぐっ……！ ひどいよ、もっと、もっと奥まで、壊すみたいに突いてぇっ！」\nKore: 「っ、あぁぁっ！ くる、くるのっ！ 全部、奪って、私を全部メチャクチャにしてっ！！」\nKore: 「ん、あぁぁぁっ！！ だしてっ、中、私の奥に、全部ぶちまけてぇぇっ！！」`
+        };
+
+        // UI更新用
+        function updateStatus(text) { document.getElementById('status-text').innerText = `System Status: \${text}`; }
+        function log(text) { document.getElementById('debug-log').innerText = text; }
+
+        // p.txtの読み込み
+        async function fetchExternalText() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-spin');
+            updateStatus('外部データ読込中...');
+            
+            try {
+                const response = await fetch('./p.txt', { cache: 'no-store' });
+                if (!response.ok) throw new Error('p.txt not found');
+                const text = await response.text();
+                if (text.trim()) {
+                    document.getElementById('custom-text').value = text;
+                    log('p.txt synchronized successfully.');
+                } else {
+                    throw new Error('p.txt is empty');
+                }
+            } catch (e) {
+                log(`Sync failed: \${e.message}. Using default.`);
+                document.getElementById('custom-text').value = presets.young;
+            } finally {
+                icon.classList.remove('animate-spin');
+                updateStatus('準備完了');
+                lucide.createIcons();
+            }
+        }
+
+        // プリセット適用
+        function applyPreset(key) {
+            document.getElementById('custom-text').value = presets[key];
+            log(`Preset '\${key}' applied.`);
+            resetAudio();
+        }
+
+        function resetAudio() {
+            if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+            currentAudioUrl = null;
+            document.getElementById('btn-play').disabled = true;
+            document.getElementById('btn-play').className = 'py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-zinc-900 text-zinc-800';
+            document.getElementById('btn-download').className = 'py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-zinc-900 text-zinc-800 pointer-events-none';
+        }
+
+        async function generateAudio() {
+            const text = document.getElementById('custom-text').value;
+            if (!text) return;
+
+            const btn = document.getElementById('btn-generate');
+            const icon = document.getElementById('gen-icon');
+            btn.disabled = true;
+            icon.classList.add('animate-spin');
+            updateStatus('生成中...');
+
+            try {
+                const prompt = `Read with a very high-pitched, young girl's voice (Childlike tone). Extreme physical exertion, intense raw emotion, clear Japanese enunciation. Ragged panting between words. NO whispering. Vocalize every sound of 'Kore': \${text}`;
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=\${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+                        },
+                        model: "gemini-2.5-flash-preview-tts"
+                    })
+                });
+
+                if (!response.ok) throw new Error('API Error');
+
+                const data = await response.json();
+                const base64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                if (!base64) throw new Error('Safety block or empty response');
+
+                const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType;
+                const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || "24000");
+
+                const blob = pcmToWav(base64, sampleRate);
+                currentAudioUrl = URL.createObjectURL(blob);
+                audioEl.src = currentAudioUrl;
+
+                // UI活性化
+                const playBtn = document.getElementById('btn-play');
+                playBtn.disabled = false;
+                playBtn.className = 'py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-red-700 text-white hover:bg-red-600 active:scale-95 shadow-lg';
+                
+                const dlBtn = document.getElementById('btn-download');
+                dlBtn.href = currentAudioUrl;
+                dlBtn.className = 'py-5 rounded-2xl flex items-center justify-center gap-2 font-black transition-all bg-zinc-100 text-black hover:bg-white active:scale-95';
+
+                updateStatus('準備完了');
+                log('Generation successful. Ready to play.');
+            } catch (e) {
+                log(`Error: \${e.message}`);
+                updateStatus('エラー');
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        function togglePlay() {
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-btn-text');
+            if (audioEl.paused) {
+                audioEl.play();
+                text.innerText = 'STOP';
+                icon.setAttribute('data-lucide', 'pause');
+            } else {
+                audioEl.pause();
+                text.innerText = 'PLAY';
+                icon.setAttribute('data-lucide', 'play');
+            }
+            lucide.createIcons();
+        }
+
+        audioEl.onended = () => {
+            document.getElementById('play-btn-text').innerText = 'PLAY';
+            document.getElementById('play-icon').setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+        };
+
+        function pcmToWav(base64, sampleRate) {
+            const binary = atob(base64.replace(/\s/g, ''));
+            const buffer = new ArrayBuffer(binary.length);
+            const view = new Uint8Array(buffer);
+            for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
+            const wav = new ArrayBuffer(44 + buffer.byteLength);
+            const dv = new DataView(wav);
+            const s = (o, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(o + i, str.charCodeAt(i)); };
+            s(0, 'RIFF'); dv.setUint32(4, 36 + buffer.byteLength, true); s(8, 'WAVE'); s(12, 'fmt ');
+            dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+            dv.setUint32(24, sampleRate, true); dv.setUint32(28, sampleRate * 2, true);
+            dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); s(36, 'data');
+            dv.setUint32(40, buffer.byteLength, true);
+            new Uint8Array(wav).set(view, 44);
+            return new Blob([wav], { type: 'audio/wav' });
+        }
+
+        // 初期化
+        window.onload = () => {
+            const container = document.getElementById('preset-container');
+            const labels = { young: 'Petit', normal: 'Normal', broken: 'Broken' };
+            Object.keys(presets).forEach(k => {
+                const b = document.createElement('button');
+                b.className = "px-3 py-1.5 bg-zinc-900 border border-red-950/30 rounded-full text-[9px] font-bold uppercase hover:bg-red-900/20 transition-all whitespace-nowrap";
+                b.innerText = labels[k];
+                b.onclick = () => applyPreset(k);
+                container.appendChild(b);
+            });
+            lucide.createIcons();
+            fetchExternalText();
+        };
+    </script>
+</body>
+</html>
